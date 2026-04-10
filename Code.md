@@ -9,7 +9,7 @@ install.packages('dplyr')
 library(dplyr)
 #Convert light data to long format:
 light.data <- light %>% pivot_longer(cols = starts_with('X'),names_to = 'position', values_to = 'data')
-use the dplyr workflow to calculate the mean, and confidence intervals for each position:
+#using the dplyr workflow to calculate the mean, and confidence intervals for each position:
 stats <- light.data %>% group_by(position) %>% summarise(n = n(), mean = mean(data),standard.dev = sd(data),
            ,standard.error = standard.dev / sqrt(n), confidence.interval=qt(0.975, df=n-1)*standard.dev/sqrt(n))
 #Remove the ‘X’ from the position and make the values numeric:
@@ -26,7 +26,7 @@ labs( title = 'Bar Chart Showing mean Lux Readings by Position and Zone \n(99% C
 fill = 'Zone:') + theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
 axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black',size=12.5),
 axis.text.y = element_text(color = 'black',size=12.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12.5), legend.title = element_text(size = 14))
-Statistical Analysis of How Light Intensity Changes Between Environmental Zones:
+#Statistical Analysis of How Light Intensity Changes Between Environmental Zones:
 #Reading in the data:
 light <- read.csv('Light_data4.csv', header=T)
 shapiro.test(light$X1) #not normally distributed
@@ -69,7 +69,7 @@ New <- community[community$Trap %in% New.vector, ]
 #Establish dataframe of species in control traps:
 Control.vector <- c('1C', '2C','3C','4C','5C','6C','7C','8C','9C','10C')
 Control <- community[community$Trap %in% Control.vector, ]
-Remove trap columns before calculating the differences:
+#Remove trap columns before calculating the differences:
 Control$Trap <- NULL
 New$Trap <- NULL
 #Calculate differences:
@@ -336,7 +336,7 @@ install.packages('ggeffects')
 library(ggeffects)
 #Reading in the data:
 lightdata <- read.csv('Light_data4.csv', header=T)
-calculating the means light intensity for each position:
+#calculating the means light intensity for each position:
 lightmeans1 <- mean(lightdata$X1, na.rm = T)
 lightmeans2 <- mean(lightdata$X2, na.rm = T)
 lightmeans3 <- mean(lightdata$X3, na.rm = T)
@@ -381,7 +381,7 @@ species.data$Bryophytes<- plant$Mosses
 abax.model <- glmmTMB(Abax.parallelepipedus ~ scale(Light), family = nbinom2, data = species.data) #4
 summary(abax.model)
 residuals.abax <- simulateResiduals(fittedModel = abax.model, n=10000)
-plot(residuals.abax) # All good
+plot(residuals.abax) 
 #This is all fine, no problems with model or residuals.
 p4<- effect_plot(abax.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+  custom.theme1() + ggtitle('Model D')
 
@@ -525,7 +525,8 @@ correlates <- c('Formicidae','Light','Trochosa','Poceae','Bryophytes','Collembol
 correlation <- round(cor(species.data[, correlates], use = 'complete.obs'), 1)
 ggcorrplot(correlation, hc.order = T,type = 'lower', lab = T)
 p.val.col <- cor_pmat(species.data[, correlates], method='spearman', use= 'complete.obs')
-ggcorrplot(correlation, hc.order = T,type = 'lower', p.mat = p.val.col) +theme(axis.text.x = element_text(color = 'black', size = 12.5, angle = 90, hjust=1, vjust=0.35), legend.text = element_text(size = 12), legend.title = element_text(size = 14)
+ggcorrplot(correlation, hc.order = T,type = 'lower', p.mat = p.val.col) +theme(axis.text.x = element_text(color = 'black', size = 12.5, angle = 90, hjust=1, vjust=0.35), legend.text = element_text(size = 12), 
+legend.title = element_text(size = 14)
 , axis.text.y = element_text(color = 'black', size = 12.5), legend.justification = c('right', 'top'), labs(title = 'Correlogram Visualising Correlations between biotic and abiotic variables'))
 
 #Modelling the Differences in Abundance Between Positions:
@@ -585,7 +586,7 @@ summary(model.binomial.type)
 #See necessary packages from previous section:
 #Reading in the Data:
 mydata.abax <- read.csv('Poission_model_data1.csv', header = T)
-Make Abax parallelepipedus presence and position a factor:
+#Make Abax parallelepipedus presence and position a factor:
 mydata.abax$abax.prescence <- as.factor(mydata.abax$abax.prescence)
 mydata.abax$Position <- as.factor(mydata.abax$Position)
 #Model
