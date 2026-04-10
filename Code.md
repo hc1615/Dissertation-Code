@@ -1,0 +1,603 @@
+# Dissertation-Code
+Code for negative binomial modelling, statistical testing and data visualisation.
+
+Creating a Bar Chart of Light Levels:
+light <- read.csv('Light_data4.csv', header=T)
+install.packages('ggplot2')
+library(ggplot2)
+install.packages('dplyr')
+library(dplyr)
+Convert light data to long format:
+light.data <- light %>% pivot_longer(cols = starts_with('X'),names_to = 'position', values_to = 'data')
+use the dplyr workflow to calculate the mean, and confidence intervals for each position:
+stats <- light.data %>% group_by(position) %>% summarise(n = n(), mean = mean(data),standard.dev = sd(data),
+           ,standard.error = standard.dev / sqrt(n), confidence.interval=qt(0.975, df=n-1)*standard.dev/sqrt(n))
+Remove the ‘X’ from the position and make the values numeric:
+stats$position <- as.numeric(gsub('X', '', stats$position))
+Create column of ecological zones:
+stats$zone <- cut(stats$position, breaks = c(0, 3, 6, 10),
+labels = c('Remnant heathland', 'Thinned plantation', 'Shaded plantation'))
+Creating customised plot using ggplot2:
+ggplot(stats, aes(x = position, y = mean, fill = zone)) + geom_bar(stat = 'identity', width = 0.7, color='black') +   
+geom_errorbar(aes(ymin=mean-standard.error, ymax=mean+standard.error, width = 0.2))+
+scale_y_continuous(breaks = seq(0, 30000, by = 5000))+scale_x_continuous(breaks = seq(0, 10, by = 1)) +
+scale_fill_manual(values = c('Remnant heathland' = 'red', 'Thinned plantation' = 'chartreuse', 'Shaded plantation' = 'deepskyblue')) +
+labs( title = 'Bar Chart Showing mean Lux Readings by Position and Zone \n(99% Confidence Interval)', x = 'Position', y = 'mean Light Intensity (Lux)',
+fill = 'Zone:') + theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
+axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black',size=12.5),
+axis.text.y = element_text(color = 'black',size=12.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12.5), legend.title = element_text(size = 14))
+Statistical Analysis of How Light Intensity Changes Between Environmental Zones:
+Reading in the data:
+light <- read.csv('Light_data4.csv', header=T)
+shapiro.test(light$X1) #not normally distributed
+Necessary packages:
+install.packages('tidyr')
+library(tidyr)
+Convert light data to long format 
+light.data <- light %>% pivot_longer(cols = everything(), names_to = 'Position', values_to = 'data')
+print(light.data)
+Light intensity grouped by zone
+light.data$Zones <- with(light.data, ifelse(Position %in% c('X1', 'X2', 'X3'), 'Remnant heath', 
+ifelse(Position %in% c('X4', 'X5', 'X6'), 'Thinned plantation','Shaded plantation')))
+zone.test <- pairwise.wilcox.test(light.data$data, light.data$Zones, p.adjust.method = 'bonferroni')
+print(zone.test)
+Mean for each light zone 
+heath.mean <- sum(mean(light$X1) + mean(light$X2) + mean(light$X3)) 
+heath.mean/3
+thinned.mean <- sum(mean(light$X4) + mean(light$X5) + mean(light$X6)) 
+thinned.mean/3
+shade.plantation.mean <- sum(mean(light$X7) + mean(light$X8) + mean(light$X9) + mean(light$X10))
+shade.plantation.mean/4
+
+Visualising the Net Contributions of Specific Taxa to Differences in Abundance Between Trap Types:
+Reading in the data:
+community <- read.csv('NDMS.data.csv', header=T)
+community[is.na(community)] <- 0
+Necessary packages:
+install.packages('ggplot2')
+library(ggplot2)
+install.packages('dplyr')
+library(dplyr)
+Exclude grouped/unidentified species and unnecessary columns:
+community$Zone <- NULL
+community$Other <- NULL
+community$Other.1 <- NULL
+community$Other.2 <- NULL
+Establish dataframe of species in new traps:
+New.vector <- c('1N', '2N','3N','4N','5N','6N','7N','8N','9N','10N')
+New <- community[community$Trap %in% New.vector, ]
+Establish dataframe of species in control traps:
+Control.vector <- c('1C', '2C','3C','4C','5C','6C','7C','8C','9C','10C')
+Control <- community[community$Trap %in% Control.vector, ]
+Remove trap columns before calculating the differences:
+Control$Trap <- NULL
+New$Trap <- NULL
+Calculate differences:
+Diff <- New-Control
+Diff <- colSums(Diff)
+print(Diff)
+Convert to dataframe:
+Difference <- as.data.frame(Diff)
+print(Difference)
+Create proper column of taxa names:
+Difference$species <- names(Diff)
+print(Difference)
+dplyr workflow makes positive differences red and the negative differences blue:
+plot <- Difference  %>% mutate(Color = ifelse(Diff <0, 'red','blue')) %>%
+ggplot2 uses the dplyr workflow and creates a plot:
+ggplot( aes(x= reorder(species, +Diff), y= Diff, fill = Color)) +geom_col( color='black')+ 
+  scale_y_continuous( breaks = c(-20,-10,0, 10, 20, 30, 40, 50, 60,70,80,90,100,110,120,130)) +
+   coord_flip() + theme_bw() + labs( fill = 'Legend:', title = 'Bar Chart Showing the Difference in Abundance Between Control\nand New Traps', 
+    x = 'Recorded Taxa', y = 'Abundance Difference') + scale_fill_manual(values = c('red', 'blue'),labels = c('High abundance than control trap','Lower abundance than control trap')) +
+   theme(legend.position = c(0.71, 0.8),legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
+        axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black'),
+        axis.text.y = element_text(color = 'black'), legend.text = element_text(size = 12), legend.title = element_text(size = 14), legend.box.background = element_rect(color='black', size=1),
+        legend.margin = margin(t = 2,  r = 5,  b = 30,  l = 5))  
+plot
+
+Creating a Compound Bar Chart of Vegetative Composition Across the Transect:
+Reading in the data:
+plant <- read.csv('plant.compound.bar.csv', header=T)
+print(plant)
+Necessary packages:
+install.packages('ggplot2')
+library(ggplot2)
+install.packages('tidyverse')  
+library(tidyverse)
+Convert vegetation data to long format 
+plant.reformat <- pivot_longer(plant, cols = -Position, names_to = 'species', values_to = 'percentage.cover')
+print(plant.reformat)
+Changing the order of data 
+plant.reformat$species <- factor(plant.reformat$species,levels = rev(c('Other.species', 'Bare.ground', 'Poaceae','Bryophytes','Pteridium.aquilinum',                                                       'Rhododendron.ponticum','Ulex.gallii','Erica.cinerea','Calluna.vulgaris')))
+Creating customised plot using ggplot2:
+plot<- ggplot(plant.reformat, aes(x = factor(Position), y = percentage.cover, fill = species)) +
+  geom_bar(stat = 'identity', color='black') + scale_y_continuous(breaks = seq(0, 100, by = 10))+
+  scale_fill_manual(values = c('Poaceae' = 'green','Ulex.gallii' = 'yellow','Erica.cinerea' = 'darkorchid','Calluna.vulgaris' = 'pink',
+  'Pteridium.aquilinum' = 'cyan','Bryophytes' = 'darkgreen','Rhododendron.ponticum' = 'red','Bare.ground' = 'chocolate4','Other.species' = 'azure4')) +
+  labs( title = 'A Composite Bar Chart Illustrating Vegetation Composition From \nRemnant Heathland to Shaded Plantation', x = 'Transect Position',
+  y = 'Ground Cover (%)', fill = 'Species:') + 
+  theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),  axis.title.x = element_text(size = 14),
+  axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black'), axis.text.y = element_text(color = 'black'), legend.justification = c('right', 'top'), 
+  legend.text = element_text(size = 12), legend.title = element_text(size = 14))
+plot
+
+NMDS visualisation and Post-hoc Analysis Using PERMANOVA:
+Necessary packages:
+install.packages('vegan')
+library(vegan)
+install.packages('ggplot2')
+library(ggplot2)
+install.packages('ggrepel')
+library(ggrepel)
+install.packages('dplyr')
+library(dplyr)
+install.packages('indicspecies')
+library(indicspecies)
+install.packages('tidyverse')
+library(tidyverse)
+Reading in the data:
+community <- read.csv('NDMS.data.csv', header=T)
+community[is.na(community)] <- 0
+print(community)
+removing grouped data from NMDS plot
+community$Other <- NULL
+community$Other.1 <- NULL
+community$Other.2 <- NULL
+
+Converting the dataframe to a matrix and getting rid of first few columns
+community.mat <- community[,3:ncol(community)]
+matrix <- as.matrix(community.mat)
+print(matrix)
+Plotting NMDS plot
+nmds.plot <- metaMDS(matrix, distance = 'bray')
+plot(nmds.plot)
+
+Extracting the NMDS coordinates to create a better plot in ggplot2
+nmds.coords <- as.data.frame(scores(nmds.plot)$sites)
+stressplot(nmds.plot) 
+print(nmds.coords)
+Adding back necessary columns
+nmds.coords$Trap = community$Trap
+nmds.coords$Zone = community$Zone
+nmds.coords$Position = c(1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10)                            
+Specifying factors and the levels for Position and Zone columns
+nmds.coords$Position <- factor(nmds.coords$Position, levels = (1:10))
+nmds.coords$Zone <- factor(nmds.coords$Zone, levels = c('1', '2', '3'))
+
+manually making Shape and colour vectors
+shapes <- c('1' = 21, '2' = 22, '3' = 23, '4' = 21, '5' = 22,'6' = 23, '7' = 21, '8' = 22, '9' = 23, '10' = 24)
+colours <- c('brown1','brown1', 'brown1', 'chartreuse3', 'chartreuse3', 'chartreuse3', 'deepskyblue1', 'deepskyblue1', 'deepskyblue1', 'deepskyblue1')
+
+ndms.coords.species <- scores(nmds.plot, display = 'species')
+speciesdata <- as.data.frame(ndms.coords.species)
+speciesdata$species <- rownames(speciesdata)
+Groups NMDS coords by zone and draws a polygon round them
+groupings <- nmds.coords %>% group_by(Zone) %>% slice(chull(NMDS1, NMDS2))
+Customising ndms plot in ggplot2
+ggplot(nmds.coords, aes(x = NMDS1, y = NMDS2, shape = Position, fill = Position)) + 
+  labs(title = 'NMDS Plot Visualising Distinct Invertebrate Communities')+
+  geom_polygon(data = groupings, aes(group = Zone), fill = NA, colour = 'black', linetype = 'dashed') +
+  geom_point(size = 4, stroke = 1, colour = 'black') + scale_shape_manual(values = shapes) +
+  scale_fill_manual(values = colours) + geom_text_repel(data = subset(speciesdata, species %in% c('Formicidae','Coelotes.atropos', 'Zelotes.latreillei',
+  'Pardosa', 'Trochosa', 'Nemastoma.bimaculatum', 'Abax.parallelepipedus', 'Staphylinidae', 'Porcellio.spinicornis', 'Porcellio.scaber', 'Oniscus.asellus', 'Julidae', 
+  'Lithobiidae', 'Collembola', 'Machilidae', 'Platydracus.stercorarius', 'Coelotes.atropos')), 
+  aes(x = NMDS1, y = NMDS2, label = species), inherit.aes = FALSE,  size = 4, color = 'black') +
+  theme_bw() + labs(shape = 'Trap position', fill = 'Transect position:') + 
+  theme(axis.text = element_text(size = 12.5, colour = 'black'),axis.title = element_text(size = 14), legend.position = 'right', legend.justification = c(1, 1), legend.text = element_text(size = 12.5),
+    legend.title = element_text(size = 12.5), legend.spacing.y = unit(1,'lines'), legend.key.height = unit(2, 'lines')) +
+  guides(fill = guide_legend(override.aes = list(shape = shapes,fill = colours,colour = 'black',size = 4 )), shape = 'none')    
+      
+print(community)
+
+PERMANOVA testing
+adonis2(matrix ~ Position, data = nmds.coords, method = 'bray', permutations = 50000)
+adonis2(matrix ~ Zone, data = nmds.coords, method = 'bray', permutations = 50000)
+Convert raw data matrix to a distance matrix:
+distance.matrix <- vegdist(matrix, method = 'bray')
+test for heterogeneity of dispersion between zones:
+dispersion.test <- betadisper(distance.matrix, nmds.coords$Zone)
+plot(dispersion.test)
+permutest(dispersion.test, permutations = 50000) 
+
+Indicator Species Analysis: 
+Use existing matrix dataset to run indicator species testing:
+indval.results <- multipatt(matrix, cluster = nmds.coords$Zone, control = how(nperm=50000)) 
+print(indval.results)
+
+Visualising Differences in Catch Composition Across the Transect:
+Read in the data:
+community1 <- read.csv('NDMS.combined.data.csv', header=T)
+community1[is.na(community1)] <- 0
+print(community1)
+community1$Zone <- NULL
+Create a series of higher taxonomic groups:
+community1$Carabidae <- community1$Poecilus.cupreus + community1$Harpalus + community1$Amara + community1$Badister + community1$P.strenuus +
+ community1$C.Violaceus + community1$C.Problematicus + community1$Abax.parallelepipedus
+community1$Staphylinidae <- community1$Staphylinidae + community1$Platydracus.stercorarius + community1$Lathrobium + community1$Ocypus.Olens +
+community1$Ocypus.Brunnipes + community1$Phosphuga + community1$
+community1$Arachnida <- community1$Other + community1$Other.1 + community1$Alopecosa + community1$Thomisidae + community1$E.frontalis + community1$D.cupreus + 
+community1$Mitopus.Morio + community1$Coelotes.atropos + community1$Zelotes + community1$Pardosa + community1$Trochosa + community1$Nemastoma.bimaculatum
+community1$Oniscidae <- community1$Porcellio.spinicornis + community1$Porcellio.scaber +community1$Oniscus.asellus
+community1$Collembola <- community1$Machilidae+ community1$Collembola
+community1$Julidae <- community$Julidae + community1$Cylindroiulus + community1$G.marginata
+community1$Chilopoda <- community1$Polydesmus + community1$Lithobius.variegatus + community1$Lithobiidae
+community1$Other.taxa <- community1$Other.2 + community1$Byrrus + community1$Silphidae + community1$Hylobius.abietis +
+ community1$Gastropoda +community1$Ixoidae
+
+Delete columns from which the previous groups were composed to leave just the larger groups in the dataframe:
+community1$Other <- NULL
+community1$Other.1 <- NULL
+community1$Other.2 <- NULL
+community1$Tegenaria.domestica <- NULL
+community1$Alopecosa<- NULL
+community1$Thomisidae <- NULL
+community1$E.frontalis <- NULL
+community1$D.cupreus <- NULL
+community1$Mitopus.Morio <- NULL
+community1$Harpalus <- NULL
+community1$Amara <- NULL
+community1$Badister <- NULL
+community1$C.Problematicus <- NULL
+community1$C.Violaceus <- NULL
+community1$Lathrobium<- NULL
+community1$Ocypus.Olens <- NULL
+community1$Ocypus.Brunnipes <- NULL
+community1$Byrrus <- NULL
+community1$Silphidae<- NULL
+community1$Hylobius.abietis <- NULL
+community1$G.marginata <- NULL
+community1$Cylindroiulus <- NULL
+community1$Polydesmus<- NULL
+community1$Lithobius.variegatus <- NULL
+community1$Gastropoda <- NULL
+community1$Ixoidae <- NULL
+community1$Poecilus.cupreus<- NULL
+community1$Phosphuga<- NULL
+community1$Ommatoiulus.sabulosus <- NULL
+community1$Olophrum.piceum <- NULL
+community1$Coelotes.atropos<- NULL
+community1$Zelotes<- NULL
+community1$Pardosa<- NULL
+community1$Trochosa<- NULL
+community1$Nemastoma.bimaculatum <- NULL
+community1$Platydracus.stercorarius <- NULL
+community1$P.strenuus <- NULL
+community1$Porcellio.spinicornis <- NULL
+community1$Porcellio.scaber <- NULL
+community1$Oniscus.asellus <- NULL
+community1$Abax.parallelepipedus <-NULL
+community1$Machilidae <- NULL
+print(community1) 
+
+Convert dataframe to a long format:
+community1.reformat <- pivot_longer(community1, cols = -Position, names_to = 'species', values_to = 'Abundance')
+Change the order of species in the dataframe:
+community1.reformat$species <- factor(community1.reformat$species,levels = rev(c('Collembola', 'Formicidae','Oniscidae','Arachnida',
+'Carabidae','Staphylinidae','Julidae','Chilopoda','Lithobiidae','Other.taxa')))
+Change the order of the colours vector:
+colours <- rev(c('darkslateblue', 'darkmagenta','maroon','firebrick2','darkorange','goldenrod1','darkolivegreen1', 'forestgreen','aquamarine2','royalblue'))
+Create the plot in ggplot2:
+plot<- ggplot(community1.reformat, aes(x = factor(Position), y = Abundance, fill = species)) +
+  geom_bar(stat = 'identity', color='black')+ theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.text.x = element_text(color = 'black', size=12.5), axis.ticks = element_line(color = 'black', size = 1),  axis.title.x = element_text(size= 14),
+axis.title.y = element_text(size = 14), axis.text.y = element_text(color = 'black', size=12.5), legend.justification = c('right', 'top'), 
+legend.text = element_text(size = 12.5), legend.title = element_text(size = 14)) +  scale_fill_manual(values = colours) + labs( x = 'Transect Position', y = 'Abundance', fill = 'Taxa:') +
+scale_y_continuous(breaks=seq(0,340, by=20)) 
+
+plot
+
+Visualising Differences in Hill-Shannon Diversity Between Positions and Traps:
+Read in the data:
+diversity <- read.csv('HILL.SHANNON.DATA.csv', header=T)
+Necessary package:
+install.packages('ggplot2')
+library(ggplot2)
+print(diversity)
+Make Position a categorical factor:
+diversity$Position <- factor(diversity$Position, levels = 1:10)
+Plot using ggplot2:
+plot <- ggplot(diversity, aes(x = Position, y = Hill.shannon)) +
+  geom_line() + scale_y_continuous(breaks = seq(0, 13, by = 1)) +
+  geom_point(aes(colour = Type, shape=Type), size = 5)+ scale_colour_manual(values = c('Control' = 'black', 'New' = 'red')) + scale_shape_manual(values = c('Control' = 20, 'New' = 19)) +
+ theme_bw() + labs(title = 'Dumbell Plot Showing Hill-Shannon Diversity\nby Position and Trap Type',x = 'Transect Position',y = 'Hill-Shannon Diversity', fill = 'Trap type:') +
+ theme(axis.ticks = element_line(color = 'black', size = 1), axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),axis.text.x = element_text(color = 'black', size=12.5),
+                     axis.text.y = element_text(color = 'black', size=12.5),legend.text = element_text(size = 12.5),legend.title = element_text(size = 14),legend.justification = c('right', 'top')) + 
+  labs(shape = 'Trap type:', colour = 'Trap type:')
+Essentially changed the width of the plot:
+plot + theme(aspect.ratio = 7/5) 
+Paired Wilcoxon test (non-parametric) comparing the diversity in new and control traps:
+diversity <- read.csv('hill.shannon.ttest.csv', header=T)
+normality.new <- shapiro.test(diversity$New)
+normality.control <- shapiro.test(diversity$Control)
+qqnorm(diversity$New)
+qqline(diversity$New)
+qqnorm(diversity$Control)
+qqline(diversity$Control)
+non.parametric.test <- wilcox.test(diversity$New,diversity$Control, paired = T)
+
+Negative Binomial Modelling of Environmental Variables and the Visualisation of the Models:
+Necessary packages:
+install.packages('glmmTMB') 
+library(glmmTMB)
+install.packages('DHARMa')
+library(DHARMa)
+install.packages('lmtest')
+library(lmtest)
+install.packages('ggplot2')
+library(ggplot2)
+install.packages('ggcorrplot')
+library(ggcorrplot)
+install.packages('performance')
+library(performance)
+install.packages('jtools')
+library(jtools)
+install.packages('gridExtra')
+library(gridExtra)
+install.packages('ggeffects')
+library(ggeffects)
+Reading in the data:
+lightdata <- read.csv('Light_data4.csv', header=T)
+calculating the means light intensity for each position:
+lightmeans1 <- mean(lightdata$X1, na.rm = T)
+lightmeans2 <- mean(lightdata$X2, na.rm = T)
+lightmeans3 <- mean(lightdata$X3, na.rm = T)
+lightmeans4 <- mean(lightdata$X4, na.rm = T)
+lightmeans5 <- mean(lightdata$X5, na.rm = T)
+lightmeans6 <- mean(lightdata$X6, na.rm = T)
+lightmeans7 <- mean(lightdata$X7, na.rm = T)
+lightmeans8 <- mean(lightdata$X8, na.rm = T)
+lightmeans9 <- mean(lightdata$X9, na.rm = T)
+lightmeans10 <- mean(lightdata$X10, na.rm = T)
+
+Creating a light dataframe:
+mean.list <- c(lightmeans1, lightmeans1, lightmeans2, lightmeans2, lightmeans3, lightmeans3,lightmeans4, lightmeans4, lightmeans5, lightmeans5, lightmeans6, lightmeans6, lightmeans7, lightmeans7,
+               lightmeans8, lightmeans8, lightmeans9, lightmeans9, lightmeans10, lightmeans10)
+light <- as.data.frame(mean.list)
+Reading in essentially the raw species data:
+species.data <- read.csv('NDMS.data.csv', header=T)
+species.data[is.na(species.data)] <- 0
+species.data$Trap <- NULL
+species.data$Zone <- NULL
+Dividing the mean light levels by 1000 to reduce the scale:
+species.data$Light = light$mean.list /1000
+Read in the plant species data:
+plant <- read.csv('Cleaned.plant.csv', header=T)
+Create a position column:
+Position <- c(1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10)
+position.data <- as.data.frame(Position)
+species.data$Position <- Position
+print(species.data)
+print(plant)
+
+Add columns from the plant dataframe to the species dataframe:
+species.data$Bare.ground <- plant$bare.ground
+species.data$Pteridium.aquilinum <- plant$braken
+species.data$Ulex.gallii <- plant$Gorse
+species.data$Poceae <- plant$Grass
+species.data$Calluna.vulgaris <- plant$Ling
+species.data$Erica.cinerea <- plant$Bell
+species.data$Bryophytes<- plant$Mosses
+
+Model D and associated effect plot:
+abax.model <- glmmTMB(Abax.parallelepipedus ~ scale(Light), family = nbinom2, data = species.data) #4
+summary(abax.model)
+residuals.abax <- simulateResiduals(fittedModel = abax.model, n=10000)
+plot(residuals.abax) # All good
+#This is all fine, no problems with model or residuals.
+p4<- effect_plot(abax.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+  custom.theme1() + ggtitle('Model D')
+Model A and associated effect plot:
+abax.brak.model <- glmmTMB(Abax.parallelepipedus ~ scale(Pteridium.aquilinum), family = nbinom2, data = species.data) #1
+summary(abax.brak.model)
+residuals.brak.abax <- simulateResiduals(fittedModel = abax.brak.model, n=10000)
+plot(residuals.brak.abax)
+bptest(abax.brak.model)
+p1<- effect_plot(abax.brak.model, pred = Pteridium.aquilinum, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ )+  custom.theme1()+ ggtitle('Model A')
+Model B and associated effect plot:
+Collembola.brak.model <- glmmTMB(Collembola ~ scale(Pteridium.aquilinum), family = nbinom2, data = species.data) #2
+summary(Collembola.brak.model)
+residuals.brak.Collembola <- simulateResiduals(fittedModel = Collembola.brak.model, n=10000)
+plot(residuals.brak.Collembola)
+bptest(Collembola.brak.model)
+p2<- effect_plot(Collembola.brak.model, pred = Pteridium.aquilinum, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F) +  custom.theme1()+ ggtitle('Model B')
+p2
+
+Model K and associated effect plot:
+Trochosa.model <-  glmmTMB(Trochosa ~ scale(log(Light)),family = nbinom2, data = species.data) #11
+summary(Trochosa.model) 
+residuals.Trochosa <- simulateResiduals(fittedModel = Trochosa.model, n=10000)
+plot(residuals.Trochosa)
+testZeroInflation(residuals.Trochosa)
+p11<- effect_plot(Trochosa.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F) + custom.theme1() +
++ ggtitle('Model K') + xlab('Light (log)') 
+Model E and associated effect plot:
+Collembola.model <- glmmTMB(Collembola ~ scale(Light), family = nbinom2, data = species.data) #5
+summary(Collembola.model)
+residuals.Collembola <- simulateResiduals(fittedModel = Collembola.model, n=10000)
+plot(residuals.Collembola)
+p5<- effect_plot(Collembola.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F) + custom.theme1() + ggtitle('Model E') 
+
+Model F and associated effect plot:
+ants.model <- glmmTMB(Formicidae ~ scale(log(Light)), family = nbinom2, data = species.data) 
+summary(ants.model)
+residuals.ants <- simulateResiduals(fittedModel = ants.model, n=10000)
+plot(residuals.ants)
+p6<- effect_plot(ants.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ scale_y_continuous( transform = 'pseudo_log', breaks = c(0,5,10,20,40,80,160))+ custom.theme1()
++ ggtitle('Model F') + xlab('Light (log)') 
+p6
+Model H and associated effect plot:
+asellus.model <- glmmTMB(Oniscus.asellus ~ scale(Light), family = nbinom2, data = species.data) #8
+summary(asellus.model)
+residuals.ascellus <- simulateResiduals(fittedModel = ascellus.model, n=50000) 
+plot(residuals.asellus) 
+p8 <- effect_plot(asellus.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1()+ ggtitle('Model H')
+
+Model G and associated effect plot:
+spini.model <- glmmTMB(Porcellio.spinicornis ~ scale(Light), family = nbinom2, data = species.data) #7
+summary(spini.model)
+residuals.spini <- simulateResiduals(fittedModel = spini.model, n=50000)
+plot(residuals.spini) 
+p7 <- effect_plot(spini.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1()+ ggtitle('Model G')
+Model L and associated effect plot:
+staphy.model <- glmmTMB(Staphylinidae ~ scale(Light), family = nbinom2, data = species.data) #12
+summary(staphy.model)
+residuals.staphy <- simulateResiduals(fittedModel = staphy.model, n=50000)
+plot(residuals.staphy) 
+p12 <- effect_plot(staphy.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1()+ ggtitle('Model L')
+Model J and associated effect plot:
+pardosa.model <- glmmTMB(Pardosa ~ scale(Light), family = nbinom2, data = species.data) #10
+summary(pardosa.model)
+residuals.pardosa<- simulateResiduals(fittedModel = pardosa.model, n=50000)
+plot(residuals.pardosa) 
+p10 <- effect_plot(pardosa.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1() + ggtitle('Model J') 
+p10
+
+
+Model C and associated effect plot:
+abax.col.model <- glmmTMB(Abax.parallelepipedus ~ scale(log(Collembola)), family = nbinom2, data = species.data) #3
+summary(abax.col.model)
+residuals.col.abax <- simulateResiduals(fittedModel = abax.col.model, n=10000)
+plot(residuals.col.abax)
+p3 <- effect_plot(abax.col.model, pred = Collembola, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+scale_y_continuous(breaks=seq(0,20, by=2))+ custom.theme1() + xlab('Collembola (log)') + ggtitle('Model C')
+p3
+Model I and associated effect plot:
+atropes.model <- glmmTMB(Coelotes.atropos ~ scale(Light), family = nbinom2, data = species.data) #9
+summary(atropes.model)
+residuals.atropes <- simulateResiduals(fittedModel = atropes.model, n=10000)
+plot(residuals.atropes)
+p9 <- effect_plot(atropes.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1()+ ggtitle('Model I')
+p9
+Model M and associated effect plot:
+abax.final.model <- glmmTMB(Abax.parallelepipedus ~ scale(log(Collembola)) + scale(Pteridium.aquilinum), family = nbinom2, data = species.data)
+summary(abax.final.model)
+residuals.final.abax <- simulateResiduals(fittedModel = abax.final.model, n=10000)
+testDispersion(residuals.final.abax)
+plot(residuals.final.abax)
+check_collinearity(abax.final.model)
+data <- predict_response(abax.final.model, terms = c('Collembola', 'Pteridium.aquilinum [0, 10,25,50] ')) 
+
+p13 <- plot(data, ci_style = 'dash', show_ci = F,line_size = 1.5, alpha = 0.3) +scale_y_continuous(breaks=seq(0,20, by=2)) + scale_x_continuous(breaks=seq(0,125, by=25)) + custom.theme1()+ ggtitle('Model M') +
+geom_line(aes(y= conf.high), linetype = 'dashed', linewidth = 0.8) + geom_line(aes(y = conf.low),linewidth = 0.8, linetype = 'dashed') + labs(color = 'Pteridium aquilinum\n(% cover)') +
+labs(y = 'Abax parallelepipedus Abundance', x = 'Collembola Abundance')  
+p13
+Manual colour vector:
+colour = c('red','blue','darkgreen','purple','yellow','black','orange','darkturquoise','green','azure4','deeppink','coral2', 'bisque3')
+Forest plot showing standardised regression coefficients for Models A-L:
+plot_summs(abax.brak.model, Collembola.brak.model, abax.col.model, abax.model, Collembola.model, ants.model,spini.model,
+           asellus.model, atropes.model, pardosa.model, Trochosa.model, staphy.model,abax.final.model,scale = T, robust = F,
+           model.names = c( 'A', 'B','C','D','E','F','G','H','I','J','K','L','M'),colors= colour, inner_ci_level = 0.9,coefs = c('Pteridium aquilinum' = 'scale(Pteridium.aquilinum)', 
+          'Collembola (log)'= 'scale(log(Collembola))', 'Light Intensity' = 'scale(Light)', 'Light Intensity (log)' = 'scale(log(Light))'))+labs(y = 'Predictor Variables', 
+           x = 'Standardised Regression Coefficient Estimates (Logarithmic Scale)', title = 'Forest Plot Shows the Standardised Regression Coefficients Used to Predict\nInvertebrate Abundance (95% CI)') +
+theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
+axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black', size = 12.5),
+axis.text.y = element_text(color = 'black', size = 12.5, angle = 90, hjust = 0.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12), legend.title = element_text(size = 14))
+Forest plot for model M:
+colours1 = c('red')
+plot.final <- plot_summs(abax.final.model, robust = F,
+  model.names = c( '1'), inner_ci_level = .9, colors= colours1,coefs = c('Pteridium aquilinum' = 'scale(Pteridium.aquilinum)','Collembola (log)'= 'scale(log(Collembola))'))+ labs(y = 'Predictor Variables', 
+  x = 'Standardised Regression Coefficients (Logarithmic Scale)', title = 'A Forest Plot Showing the Standardised Regression Coefficients of Collembola Abundance\nand Pteridium Aquilinum Cover for Predicting Abax Parallelepipedus Abundance (95% CI)') +
+  theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
+                    axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black', size = 12.5),
+                    axis.text.y = element_text(color = 'black', size = 12.5, angle = 90, hjust = 0.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12), legend.title = element_text(size = 14))
+plot(plot.final)
+Arranging models A-L onto one plot:
+grid.arrange(p1, p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12, nrow = 4)
+
+Visualising model M which has 2 predictors:
+presentation.model.M <- plot_summs(abax.final.model, robust = F, model.names = c( '1'), inner_ci_level = .9, colors= colours1,coefs = c('Pteridium aquilinum' = 'scale(Pteridium.aquilinum)',
+'Collembola (log)'= 'scale(log(Collembola))'))+ labs(y = 'Predictor Variables', x = 'Standardised Regression Coefficients (Logarithmic Scale)', title = 'Model M') +
+theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
+axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black', size = 12.5),
+axis.text.y = element_text(color = 'black', size = 12.5, angle = 90, hjust = 0.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12), 
+legend.title = element_text(size = 14), plot.title=element_text(family='', face='bold', colour='red', size=10))
+plot(presentation.model.M)
+
+Visualising the Exploratory Correlation Matrix:
+Selecting the variables from species.data which will be included in the correlation matrix:
+print(species.data)
+correlates <- c('Formicidae','Light','Trochosa','Poceae','Bryophytes','Collembola','Pteridium.aquilinum','Abax.parallelepipedus','Porcellio.spinicornis',   'Oniscus.asellus','Staphylinidae','Coelotes.atropos','Ulex.gallii','Erica.cinerea','Calluna.vulgaris', 'Bare.ground','Pardosa')
+Creating the plot and customising using ggplot2:
+correlation <- round(cor(species.data[, correlates], use = 'complete.obs'), 1)
+ggcorrplot(correlation, hc.order = T,type = 'lower', lab = T)
+p.val.col <- cor_pmat(species.data[, correlates], method='spearman', use= 'complete.obs')
+ggcorrplot(correlation, hc.order = T,type = 'lower', p.mat = p.val.col) +theme(axis.text.x = element_text(color = 'black', size = 12.5, angle = 90, hjust=1, vjust=0.35), legend.text = element_text(size = 12), legend.title = element_text(size = 14)
+, axis.text.y = element_text(color = 'black', size = 12.5), legend.justification = c('right', 'top'), labs(title = 'Correlogram Visualising Correlations between biotic and abiotic variables'))
+
+Modelling the Differences in Abundance Between Positions:
+Reading in the data:
+mydata <- read.csv('Poission_model_data.csv', header=T)
+Necessary packages:
+install.packages('performance')
+library(performance)
+install.packages('glmmTMB') 
+library(glmmTMB)
+install.packages('DHARMa')
+library(DHARMa)
+install.packages('emmeans')
+library(emmeans)
+install.packages('ggplot2')
+library(ggplot2)
+Make trap ID, trap type and transect position factors:
+sum(mydata$Abundance)
+mydata$Type <- as.factor(mydata$Type)
+mydata$Trap <- as.factor(mydata$Trap)
+mydata$Position <- factor(mydata$Position, levels <- as.character(1:10))
+The effect of Trap type and Position on total abundance:
+model.binomial <- glmmTMB(Abundance ~ Type + Position, family = nbinom2, data = mydata)
+summary(model.binomial)
+Conditions for negative binomial models were accounted for:
+check_overdispersion(model.binomial)
+check_zeroinflation(model.binomial)
+residuals <- simulateResiduals(fittedModel = model.binomial, n=10000)
+plot(residuals) 
+
+Calculating estimated marginal means for both predictors:
+E1 <- emmeans(model.binomial, ~ Type)
+E2 <- emmeans(model.binomial, ~ Position, type='response')
+
+Create a dataframe for estimated marginal mean of abundance at each position nested within each environmental zone:
+EMM <- as.data.frame(E2)
+EMM$Position <- as.numeric(EMM$Position)
+EMM$Zone<- cut(EMM$Position, breaks = c(0, 3, 6, 10), labels = c('Remnant heathland', 'Thinned plantation', 'Shaded plantation'))
+Custom aesthetics for plots:
+custom.theme <- function() { theme_bw() + theme(axis.ticks = element_line(color = 'black'), size = 1,axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  
+axis.text.x = element_text(color = 'black', size = 12.5), axis.text.y = element_text(color = 'black',size=12.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12.5),
+legend.title = element_text(size = 14))
+}
+Plot the estimated marginal mean for Abundance by position using ggplot2:
+plot <- ggplot(EMM, aes(x = response, y = Position, fill = Zone)) + geom_errorbar(aes(xmin = response- (SE*1.96), xmax = response+(SE*1.96)), width = 0.2) + geom_point( linewidth = 0.7, color='black', shape=21, size=3.3) + 
+  scale_fill_manual(values = c('Remnant heathland' = 'red', 'Thinned plantation' = 'chartreuse', 'Shaded plantation' = 'deepskyblue')) + scale_y_continuous(breaks = seq(0, 10, by = 1)) +  
+  labs( title = 'A Plot Revealing Changes in Estimated Marginal Mean\nAbundance Between Positions and Zones', x = 'Predicted Mean Abundance', y = 'Position',
+  fill = 'Zone:') + custom.theme()
+Reduce plot width:
+plot + theme(aspect.ratio = 6/5)
+print(EMM)
+
+If abundance differs between Traps irrespective of transect position:
+model.binomial.type <- glmmTMB(Abundance ~ Type + (1|Position), family = nbinom2, data = mydata)
+summary(model.binomial.type)
+
+Modelling the Effects of Abax parallelepipedus on Collembola Abundance:
+See necessary packages from previous section:
+Reading in the Data:
+mydata.abax <- read.csv('Poission_model_data1.csv', header = T)
+Make Abax parallelepipedus presence and position a factor:
+mydata.abax$abax.prescence <- as.factor(mydata.abax$abax.prescence)
+mydata.abax$Position <- as.factor(mydata.abax$Position)
+Model:
+model.abax.nb <- glmmTMB(Springtail ~ Type * abax.prescence + (1|Position), family = nbinom2, data = mydata.abax)
+summary(model.abax.nb)
+Checking model assumptions:
+check_zeroinflation(model.abax.nb)
+check_overdispersion(model.abax.nb)
+residuals.abax <- simulateResiduals(fittedModel = model.abax.nb, n=10000)
+plot(residuals.abax)
+
+Calculate the estimated marginal means from the model:
+E3 <- emmeans(model.abax.nb, ~ Type*abax.prescence)
+pairs(E3)
+plotting and customising the pairwise p-value plot:
+aesthetics <- list(point = list(shape = 'square', color='black'), segment = list(linetype = 'solid', linewidth=1.5, color = 'black'), label = list(size=4, hjust=0.5, color='black'))
+pwpp(E3, aes = aesthetics) + theme_bw() + theme( axis.ticks = element_line(color = 'black', size = 1),
+axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black', size = 12.5),
+axis.text.y = element_text(color = 'black', size = 12.5, angle = 30, vjust = -0.1))+ labs(y = 'Pairwise Contrasts', x = 'Tukey-Adjusted P Value') + scale_y_discrete(labels=c('new yes' ='New & Abax\nparallelepipedus (yes)',
+'new no' = 'New & Abax\nparallelepipedus (no)', 'control no' = 'Control & Abax\nparallelepipedus (no)', 'control yes' =  'Control & Abax\nparallelepipedus (yes)'))
+
