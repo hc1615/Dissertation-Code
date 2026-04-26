@@ -11,7 +11,7 @@ library(dplyr)
 light.data <- light %>% pivot_longer(cols = starts_with('X'),names_to = 'position', values_to = 'data')
 #using the dplyr workflow to calculate the mean, and confidence intervals for each position:
 stats <- light.data %>% group_by(position) %>% summarise(n = n(), mean = mean(data),standard.dev = sd(data),
-           ,standard.error = standard.dev / sqrt(n), confidence.interval=qt(0.975, df=n-1)*standard.dev/sqrt(n))
+           standard.error = standard.dev / sqrt(n), confidence.interval=qt(0.975, df=n-1)*standard.dev/sqrt(n))
 #Remove the ‘X’ from the position and make the values numeric:
 stats$position <- as.numeric(gsub('X', '', stats$position))
 #Create column of ecological zones:
@@ -84,7 +84,6 @@ Difference$species <- names(Diff)
 print(Difference)
 #dplyr workflow makes positive differences red and the negative differences blue:
 plot <- Difference  %>% mutate(Color = ifelse(Diff <0, 'red','blue')) %>%
-ggplot2 uses the dplyr workflow and creates a plot:
 ggplot( aes(x= reorder(species, +Diff), y= Diff, fill = Color)) +geom_col( color='black')+ 
   scale_y_continuous( breaks = c(-20,-10,0, 10, 20, 30, 40, 50, 60,70,80,90,100,110,120,130)) +
    coord_flip() + theme_bw() + labs( fill = 'Legend:', title = 'Bar Chart Showing the Difference in Abundance Between Control\nand New Traps', 
