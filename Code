@@ -320,8 +320,6 @@ install.packages('glmmTMB')
 library(glmmTMB)
 install.packages('DHARMa')
 library(DHARMa)
-install.packages('lmtest')
-library(lmtest)
 install.packages('ggplot2')
 library(ggplot2)
 install.packages('ggcorrplot')
@@ -376,6 +374,11 @@ species.data$Poceae <- plant$Grass
 species.data$Calluna.vulgaris <- plant$Ling
 species.data$Erica.cinerea <- plant$Bell
 species.data$Bryophytes<- plant$Mosses
+# Customised theme for compact plot code
+custom.theme1 <- function() { theme_bw() +
+    theme( legend.key.spacing.y = unit(0.15, 'cm'),axis.ticks = element_line(color = 'black', size = 1), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14), 
+          axis.text.x = element_text(color = 'black', size = 12.5), axis.text.y = element_text(color = 'black', size = 12.5), plot.title=element_text(family='', face='bold', colour='red', size=10))
+}
 
 #Model D and associated effect plot:
 abax.model <- glmmTMB(Abax.parallelepipedus ~ scale(Light), family = nbinom2, data = species.data) #4
@@ -383,22 +386,20 @@ summary(abax.model)
 residuals.abax <- simulateResiduals(fittedModel = abax.model, n=10000)
 plot(residuals.abax) 
 #This is all fine, no problems with model or residuals.
-p4<- effect_plot(abax.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+  custom.theme1() + ggtitle('Model D')
+p4<- effect_plot(abax.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1() + ggtitle('Model D')
 
 #Model A and associated effect plot:
 abax.brak.model <- glmmTMB(Abax.parallelepipedus ~ scale(Pteridium.aquilinum), family = nbinom2, data = species.data) #1
 summary(abax.brak.model)
 residuals.brak.abax <- simulateResiduals(fittedModel = abax.brak.model, n=10000)
 plot(residuals.brak.abax)
-bptest(abax.brak.model)
-p1<- effect_plot(abax.brak.model, pred = Pteridium.aquilinum, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ )+  custom.theme1()+ ggtitle('Model A')
+p1<- effect_plot(abax.brak.model, pred = Pteridium.aquilinum, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ custom.theme1()+ ggtitle('Model A')
 
 #Model B and associated effect plot:
 Collembola.brak.model <- glmmTMB(Collembola ~ scale(Pteridium.aquilinum), family = nbinom2, data = species.data) #2
 summary(Collembola.brak.model)
 residuals.brak.Collembola <- simulateResiduals(fittedModel = Collembola.brak.model, n=10000)
 plot(residuals.brak.Collembola)
-bptest(Collembola.brak.model)
 p2<- effect_plot(Collembola.brak.model, pred = Pteridium.aquilinum, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F) +  custom.theme1()+ ggtitle('Model B')
 p2
 
