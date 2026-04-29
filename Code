@@ -22,7 +22,7 @@ ggplot(stats, aes(x = position, y = mean, fill = zone)) + geom_bar(stat = 'ident
 geom_errorbar(aes(ymin=mean-standard.error, ymax=mean+standard.error, width = 0.2))+
 scale_y_continuous(breaks = seq(0, 30000, by = 5000))+scale_x_continuous(breaks = seq(0, 10, by = 1)) +
 scale_fill_manual(values = c('Remnant heathland' = 'red', 'Thinned plantation' = 'chartreuse', 'Shaded plantation' = 'deepskyblue')) +
-labs( title = 'Bar Chart Showing mean Lux Readings by Position and Zone \n(99% Confidence Interval)', x = 'Position', y = 'mean Light Intensity (Lux)',
+labs( title = 'Bar Chart Showing mean Lux Readings by Position and Zone \n(95% Confidence Interval)', x = 'Position', y = 'mean Light Intensity (Lux)',
 fill = 'Zone:') + theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks = element_line(color = 'black', size = 1),
 axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black',size=12.5),
 axis.text.y = element_text(color = 'black',size=12.5), legend.justification = c('right', 'top'), legend.text = element_text(size = 12.5), legend.title = element_text(size = 14))
