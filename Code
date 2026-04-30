@@ -608,7 +608,7 @@ axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  
 axis.text.y = element_text(color = 'black', size = 12.5, angle = 30, vjust = -0.1))+ labs(y = 'Pairwise Contrasts', x = 'Tukey-Adjusted P Value') + scale_y_discrete(labels=c('new yes' ='New & Abax\nparallelepipedus (yes)',
 'new no' = 'New & Abax\nparallelepipedus (no)', 'control no' = 'Control & Abax\nparallelepipedus (no)', 'control yes' =  'Control & Abax\nparallelepipedus (yes)'))
 
-#File 9, making a basic bar chart showing the percentage of invertebrates caught in each screen/layer of the new trap the new trap 
+#File 9, making a basic bar chart showing the percentage of invertebrates caught in each screen/layer of the new trap 
 #Loading ggplot
 install.packages('ggplot2')
 library(ggplot2)
