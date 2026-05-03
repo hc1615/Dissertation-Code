@@ -109,7 +109,8 @@ library(tidyverse)
 plant.reformat <- pivot_longer(plant, cols = -Position, names_to = 'species',values_to = 'percentage.cover')
 print(plant.reformat)
 #Changing the order of data for aesthetic reasons 
-plant.reformat$species <- factor( plant.reformat$species,levels = rev(c('Other.species', 'Bare.ground', 'Poaceae','Bryophytes','Pteridium.aquilinum',                                                       'Rhododendron.ponticum','Ulex.gallii','Erica.cinerea','Calluna.vulgaris')))
+plant.reformat$species <- factor( plant.reformat$species,levels = rev(c('Other.species', 'Bare.ground', 'Poaceae','Bryophytes','Pteridium.aquilinum','Rhododendron.ponticum',
+'Ulex.gallii','Erica.cinerea','Calluna.vulgaris')))
 #Creating customised plot using ggplot2:
 plot<- ggplot(plant.reformat, aes(x = factor(Position), y = percentage.cover, fill = species)) +
   geom_bar(stat = 'identity', color='black') + scale_y_continuous(breaks = seq(0, 100, by = 10))+
@@ -279,7 +280,8 @@ community1.reformat$species <- factor(community1.reformat$species,levels = rev(c
 colours <- rev(c('darkslateblue', 'darkmagenta','maroon', 'firebrick2','darkorange','goldenrod1','darkolivegreen1', 'forestgreen','aquamarine2','royalblue'))
 #Create the plot in ggplot2:
 plot<- ggplot(community1.reformat, aes(x = factor(Position), y =Abundance, fill = species)) +
-  geom_bar(stat = 'identity', color='black')+ theme_bw()+ theme(legend.key.spacing.y= unit(0.15, 'cm'), axis.text.x = element_text(color = 'black', size=12.5), axis.ticks = element_line(color = 'black', size = 1),  axis.title.x = element_text(size= 14),
+  geom_bar(stat = 'identity', color='black')+ theme_bw()+ theme(legend.key.spacing.y= unit(0.15, 'cm'), axis.text.x = element_text(color = 'black', size=12.5), 
+axis.ticks = element_line(color = 'black', size = 1),  axis.title.x = element_text(size= 14),
 axis.title.y = element_text(size = 14), axis.text.y = element_text(color = 'black', size=12.5), legend.justification =c('right', 'top'), 
 legend.text = element_text(size = 12.5), legend.title = element_text(size = 14)) +  scale_fill_manual(values = colours) + labs( x = 'Transect Position', y = 'Abundance', fill = 'Taxa:') +
 scale_y_continuous(breaks=seq(0,340, by=20)) 
@@ -424,7 +426,8 @@ ants.model <- glmmTMB(Formicidae ~ scale(log(Light)), family = nbinom2, data = s
 summary(ants.model)
 residuals.ants <- simulateResiduals(fittedModel = ants.model, n=10000)
 plot(residuals.ants)
-p6<- effect_plot(ants.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ scale_y_continuous( transform = 'pseudo_log', breaks = c(0,5,10,20,40,80,160))+ custom.theme1()
+p6<- effect_plot(ants.model, pred = Light, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+ 
+scale_y_continuous( transform = 'pseudo_log', breaks = c(0,5,10,20,40,80,160))+ custom.theme1()
 + ggtitle('Model F') + xlab('Light (log)') 
 p6
 
@@ -462,7 +465,8 @@ abax.col.model <- glmmTMB(Abax.parallelepipedus ~ scale(log(Collembola)), family
 summary(abax.col.model)
 residuals.col.abax <- simulateResiduals(fittedModel = abax.col.model, n=10000)
 plot(residuals.col.abax)
-p3 <- effect_plot(abax.col.model, pred = Collembola, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+scale_y_continuous(breaks=seq(0,20, by=2))+ custom.theme1() + xlab('Collembola (log)') + ggtitle('Model C')
+p3 <- effect_plot(abax.col.model, pred = Collembola, interval = T, plot.points = T, partial.residuals = F, point.size = 2, point.alpha = 1, colors='black', jitter = F)+
+scale_y_continuous(breaks=seq(0,20, by=2))+ custom.theme1() + xlab('Collembola (log)') + ggtitle('Model C')
 p3
 
 #Model I and its associated effect plot:
@@ -501,10 +505,12 @@ axis.text.y = element_text(color = 'black', size = 12.5, angle = 90, hjust = 0.5
 colours1 = c('red')
 plot.final <- plot_summs(abax.final.model, robust = F,
   model.names = c( '1'), inner_ci_level = .9, colors= colours1,coefs = c('Pteridium aquilinum' = 'scale(Pteridium.aquilinum)','Collembola (log)'= 'scale(log(Collembola))'))+ labs(y = 'Predictor Variables', 
-  x = 'Standardised Regression Coefficients (Logarithmic Scale)', title = 'A Forest Plot Showing the Standardised Regression Coefficients of Collembola Abundance\nand Pteridium Aquilinum Cover for Predicting Abax Parallelepipedus Abundance (95% CI)') +
+  x = 'Standardised Regression Coefficients (Logarithmic Scale)', title = 'A Forest Plot Showing the Standardised Regression Coefficients of Collembola Abundance\nand 
+Pteridium Aquilinum Cover for Predicting Abax Parallelepipedus Abundance (95% CI)') +
   theme_bw()+ theme(legend.key.spacing.y = unit(0.15, 'cm'), axis.ticks =element_line(color = 'black', size = 1),
                     axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black', size = 12.5),
-                    axis.text.y = element_text(color = 'black', size = 12.5, angle = 90,hjust = 0.5), legend.justification = c('right','top'), legend.text = element_text(size = 12), legend.title = element_text(size = 14))
+                    axis.text.y = element_text(color = 'black', size = 12.5, angle = 90,hjust = 0.5), legend.justification = c('right','top'), legend.text = element_text(size = 12), 
+legend.title = element_text(size = 14))
 plot(plot.final)
 #Arranging effect plots from models A-L onto one plot:
 grid.arrange(p1, p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12, nrow = 4)
@@ -572,7 +578,8 @@ axis.text.x = element_text(color = 'black', size = 12.5), axis.text.y = element_
 legend.title = element_text(size = 14))
 }
 #Plotting the estimated marginal means for Abundance by position using ggplot2:
-plot <- ggplot(EMM, aes(x = response, y =  Position, fill = Zone)) + geom_errorbar(aes(xmin = response-(SE*1.96), xmax = response+(SE*1.96)), width = 0.2) + geom_point( linewidth = 0.7, color='black', shape=21, size=3.3) + scale_fill_manual(values = c('Remnant heathland' = 'red', 'Thinned plantation' = 'chartreuse', 'Shaded plantation' = 'deepskyblue')) + scale_y_continuous(breaks = seq(0, 10, by = 1)) +  
+plot <- ggplot(EMM, aes(x = response, y =  Position, fill = Zone)) + geom_errorbar(aes(xmin = response-(SE*1.96), xmax = response+(SE*1.96)), width = 0.2) + geom_point( linewidth = 0.7, color='black', 
+shape=21, size=3.3) + scale_fill_manual(values = c('Remnant heathland' = 'red', 'Thinned plantation' = 'chartreuse', 'Shaded plantation' = 'deepskyblue')) + scale_y_continuous(breaks = seq(0, 10, by = 1)) +  
   labs( title = 'A Plot Revealing Changes in Estimated Marginal Mean\nAbundance Between Positions and Zones', x = 'Predicted Mean Abundance', y = 'Position',
   fill = 'Zone:') + custom.theme()
 #Reduce plot width
@@ -605,7 +612,8 @@ pairs(E3)
 aesthetics <- list(point = list(shape = 'square', color='black'), segment = list(linetype = 'solid', linewidth=1.5, color = 'black'), label = list(size=4, hjust=0.5, color='black'))
 pwpp(E3, aes = aesthetics) + theme_bw() + theme( axis.ticks =element_line(color = 'black', size = 1),
 axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),  axis.text.x = element_text(color = 'black', size = 12.5),
-axis.text.y = element_text(color = 'black', size = 12.5, angle = 30, vjust = -0.1))+ labs(y = 'Pairwise Contrasts', x = 'Tukey-Adjusted P Value') + scale_y_discrete(labels=c('new yes' ='New & Abax\nparallelepipedus (yes)',
+axis.text.y = element_text(color = 'black', size = 12.5, angle = 30, vjust = -0.1))+ labs(y = 'Pairwise Contrasts', x = 'Tukey-Adjusted P Value') + 
+scale_y_discrete(labels=c('new yes' ='New & Abax\nparallelepipedus (yes)',
 'new no' = 'New & Abax\nparallelepipedus (no)', 'control no' = 'Control & Abax\nparallelepipedus (no)', 'control yes' =  'Control & Abax\nparallelepipedus (yes)'))
 
 #File 9, making a basic bar chart showing the percentage of invertebrates caught in each screen/layer of the new trap 
@@ -630,7 +638,8 @@ percent.base <- sum.base/827*100
 layer.data <- data.frame( count = c(3.26,15.84,80.89), layer = c('Top Screen (9mm)', 'Middle Screen (4mm)', 'Base Plate (2mm)'))
 print(layer.data)
 # plotting using ggplot 2
-plot <- ggplot(layer.data, aes(x = layer, y = count)) + geom_bar(stat='identity', width = 0.7, color='black', fill = 'deepskyblue1') + scale_y_continuous(breaks = seq(0, 100, by = 10))+ labs( x = 'New Trap Layer', y = 'Total Invertebrates in the New Trap (%)')+ 
+plot <- ggplot(layer.data, aes(x = layer, y = count)) + geom_bar(stat='identity', width = 0.7, color='black', fill = 'deepskyblue1') + scale_y_continuous(breaks = seq(0, 100, by = 10))+
+labs( x = 'New Trap Layer', y = 'Total Invertebrates in the New Trap (%)')+ 
   theme_bw()+ theme(axis.ticks = element_line(color = 'black', size = 1),  axis.title.x = element_text(size = 13, vjust = -0.3),
   axis.title.y = element_text(size = 13, vjust = 3),  axis.text.x = element_text(color = 'black', size=12), axis.text.y = element_text(color = 'black', size=12))
 #changing the aspect ratio to reduce the height of the plot
